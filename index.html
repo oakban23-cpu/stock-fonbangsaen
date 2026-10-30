@@ -285,14 +285,14 @@ details summary{cursor:pointer;font-weight:600}
   .row .r{grid-column:1/-1;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px}
 }
 #bookprint{display:none}
-body.measuring .paper-wrap .paper{display:block!important;position:absolute!important;left:-9999px!important;top:0!important;visibility:hidden!important;width:718px!important;min-width:0!important;max-width:none!important;padding:0!important;zoom:1!important}
+body.measuring .paper-wrap .paper{display:block!important;position:absolute!important;left:-9999px!important;top:0!important;visibility:hidden!important;width:100vw!important;min-width:0!important;max-width:none!important;padding:0!important;zoom:1!important}
 @media print{
   body.printing-book>*:not(#bookprint){display:none!important}
   body.printing-book{margin:0!important;padding:0!important;min-height:0!important;height:auto!important}
   body.printing-book #bookprint{display:block!important}
-  #bookprint .bppage{height:255mm;display:flex;align-items:center;justify-content:center;break-after:page;page-break-after:always;overflow:hidden}
+  #bookprint .bppage{height:135vw;display:block;text-align:center;break-after:page;page-break-after:always;break-inside:avoid;overflow:hidden}
   #bookprint .bppage:last-child{break-after:auto;page-break-after:auto}
-  #bookprint img{max-width:100%;max-height:255mm;object-fit:contain;display:block}
+  #bookprint img{max-width:100%;max-height:133vw;width:auto;height:auto;object-fit:contain;display:inline-block;vertical-align:top}
 }
 @media print{
   @page{size:A4;margin:9mm}
@@ -546,14 +546,15 @@ function printNow(kind,after){
   const restore=()=>{if(restored)return;restored=true;if(meta&&old!=null)meta.setAttribute('content',old);root.style.removeProperty('--pz');window.removeEventListener('afterprint',restore);if(after)after()};
   if(meta)meta.setAttribute('content','width=794');
   root.style.setProperty('--pz','1');
-  if(kind==='paper'){
-    const p=document.querySelector('.paper-wrap .paper');
-    if(p){document.body.classList.add('measuring');const h=p.getBoundingClientRect().height;document.body.classList.remove('measuring');
-      const avail=1030;/* พื้นที่ A4 ใช้ได้ ~ 272mm (px) */
-      if(h>avail)root.style.setProperty('--pz',(Math.floor(avail/h*100)/100).toString())}
-  }
   window.addEventListener('afterprint',restore);
-  setTimeout(()=>{try{window.print()}catch(e){restore()}},250);
+  setTimeout(()=>{
+    try{
+      if(kind==='paper'){const p=document.querySelector('.paper-wrap .paper');
+        if(p){document.body.classList.add('measuring');const h=p.getBoundingClientRect().height,w=document.documentElement.clientWidth||window.innerWidth;document.body.classList.remove('measuring');
+          const avail=w*1.36;if(h>avail)root.style.setProperty('--pz',(Math.floor(avail/h*100)/100).toString())}}
+      setTimeout(()=>{try{window.print()}catch(e){restore()}},150);
+    }catch(e){restore()}
+  },300);
   setTimeout(restore,60000);
 }
 async function printBook(){
