@@ -540,13 +540,25 @@ const pubUrl=p=>{if(!p)return '';
   return sb.storage.from('cars').getPublicUrl(p).data.publicUrl};
 
 /* พิมพ์ให้พอดี A4 หน้าเดียว (แก้ปัญหา iPhone ที่ขยายเนื้อหาจนล้นหน้า): ล็อกความกว้างเลย์เอาต์เท่ากระดาษ A4 ก่อนพิมพ์ และย่อใบให้พอดีหน้า */
+/* iOS สร้างตัวอย่างพิมพ์ใหม่ทุกครั้งที่ผู้ใช้เปลี่ยนมาตราส่วน → ห้ามเคลียร์ทันทีหลัง afterprint ให้เคลียร์เมื่อผู้ใช้แตะหน้าแอปอีกครั้งเท่านั้น */
+let _pcl=null;
+function lateCleanup(fn){
+  if(_pcl)_pcl();
+  let ran=false;const t0=Date.now();
+  const run=()=>{if(ran)return;ran=true;_pcl=null;document.removeEventListener('pointerdown',h,true);document.removeEventListener('touchstart',h,true);fn()};
+  const h=()=>{if(Date.now()-t0>1500)run()};
+  document.addEventListener('pointerdown',h,true);document.addEventListener('touchstart',h,true);
+  setTimeout(run,600000);_pcl=run;
+}
 function printNow(kind,after){
-  const meta=document.querySelector('meta[name=viewport]'),old=meta?meta.getAttribute('content'):null;
-  const root=document.documentElement;let restored=false;
-  const restore=()=>{if(restored)return;restored=true;if(meta&&old!=null)meta.setAttribute('content',old);root.style.removeProperty('--pz');window.removeEventListener('afterprint',restore);if(after)after()};
+  const meta=document.querySelector('meta[name=viewport]');
+  if(window.__vp0==null&&meta)window.__vp0=meta.getAttribute('content');
+  const root=document.documentElement;let restored=false,started=false;
+  const restore=()=>{if(restored)return;restored=true;if(meta&&window.__vp0!=null)meta.setAttribute('content',window.__vp0);root.style.removeProperty('--pz');window.removeEventListener('afterprint',onAfter);if(after)after()};
+  const onAfter=()=>{lateCleanup(restore)};
   if(meta)meta.setAttribute('content','width=794');
   root.style.setProperty('--pz','1');
-  window.addEventListener('afterprint',restore);
+  window.addEventListener('afterprint',onAfter);
   setTimeout(()=>{
     try{
       if(kind==='paper'){const p=document.querySelector('.paper-wrap .paper');
@@ -555,7 +567,7 @@ function printNow(kind,after){
       setTimeout(()=>{try{window.print()}catch(e){restore()}},150);
     }catch(e){restore()}
   },300);
-  setTimeout(restore,60000);
+  setTimeout(()=>{if(!restored&&!_pcl)restore()},600000);
 }
 async function printBook(){
   const c=cur();if(!c)return;
