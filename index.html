@@ -857,7 +857,7 @@ function updatePaper(){
   const hint=$('#balhint');if(hint)hint.textContent='คำนวณจาก (เงินดาวน์ + ค่าโอน + ค่าเบี้ยประกัน + อื่นๆ) − (เงินมัดจำ + เทิร์นรถเก่า) = '+money(calcBalance(h))+' บาท ค่าบวกคือชำระเพิ่ม ค่าลบคือรับคืน';
   const price=c.sold_price||c.price;
   el.innerHTML=`<div class="top2"><div class="logo">${logoHtml()}</div>
-     <div class="dtr">วันที่ ${u(fmtBE(h.date),120)}<br>เบอร์ติดต่อ ${esc(C.SHOP_PHONE||'')}</div></div>
+     <div class="dtr">วันที่ ${u(h.date?fmtBE(h.date):'',120)}<br>เบอร์ติดต่อ ${esc(C.SHOP_PHONE||'')}</div></div>
    <h2 style="text-align:center">ใบแจ้งรายละเอียดวันส่งมอบรถ</h2>
    <div class="cols"><div><h3>ข้อมูลผู้เช่าซื้อ</h3>
        <table class="big">${big('ผู้เช่าซื้อ',h.name)}<tr><td class="l" style="height:78px">ที่อยู่</td><td>${esc(h.addr)}</td></tr>${big('เลขบัตรประชาชน',h.idcard)}${big('เบอร์ติดต่อ',h.phone)}</table>
