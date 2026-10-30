@@ -285,24 +285,25 @@ details summary{cursor:pointer;font-weight:600}
   .row .r{grid-column:1/-1;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px}
 }
 #bookprint{display:none}
-body.measuring .paper-wrap .paper{display:block!important;position:absolute!important;left:-9999px!important;top:0!important;visibility:hidden!important;width:100vw!important;min-width:0!important;max-width:none!important;padding:0!important;zoom:1!important}
+body.measuring .paper-wrap .paper{display:block!important;position:absolute!important;left:-9999px!important;top:0!important;visibility:hidden!important;width:88vw!important;min-width:0!important;max-width:none!important;padding:0!important;zoom:1!important}
 @media print{
   body.printing-book>*:not(#bookprint){display:none!important}
   body.printing-book{margin:0!important;padding:0!important;min-height:0!important;height:auto!important}
   body.printing-book #bookprint{display:block!important}
-  #bookprint .bppage{height:135vw;display:block;text-align:center;break-after:page;page-break-after:always;break-inside:avoid;overflow:hidden}
+  #bookprint .bppage{height:130vw;box-sizing:border-box;padding:5vw 4vw;display:block;text-align:center;break-after:page;page-break-after:always;break-inside:avoid;overflow:hidden}
   #bookprint .bppage:last-child{break-after:auto;page-break-after:auto}
-  #bookprint img{max-width:100%;max-height:133vw;width:auto;height:auto;object-fit:contain;display:inline-block;vertical-align:top}
+  #bookprint img{max-width:100%;max-height:120vw;width:auto;height:auto;object-fit:contain;display:inline-block;vertical-align:top}
 }
 @media print{
-  @page{size:A4;margin:9mm}
+  @page{size:A4;margin:0}
   html,body{background:#fff!important}
   .top,.noprint,#toast,#modal,.paper-actions{display:none!important}
   .wrap{padding:0;max-width:none}
   .two{display:block!important}
   .paper-wrap{overflow:visible!important}
   .paper{zoom:var(--pz,1);box-shadow:none!important;border:0!important;margin:0!important;max-width:none!important;width:100%!important;min-width:0!important;padding:0!important;color:#000!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  body{padding:0!important}
+  body{padding:6vw!important}
+  body.printing-book{padding:0!important}
 }
 
 /* ---- UI รอบ 2: อ่านง่าย ใช้ง่าย ---- */
@@ -563,7 +564,7 @@ function printNow(kind,after){
     try{
       if(kind==='paper'){const p=document.querySelector('.paper-wrap .paper');
         if(p){document.body.classList.add('measuring');const h=p.getBoundingClientRect().height,w=document.documentElement.clientWidth||window.innerWidth;document.body.classList.remove('measuring');
-          const avail=w*1.36;if(h>avail)root.style.setProperty('--pz',(Math.floor(avail/h*100)/100).toString())}}
+          const avail=w*1.25;if(h>avail)root.style.setProperty('--pz',(Math.floor(avail/h*100)/100).toString())}}
       setTimeout(()=>{try{window.print()}catch(e){restore()}},150);
     }catch(e){restore()}
   },300);
