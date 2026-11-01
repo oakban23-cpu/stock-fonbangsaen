@@ -628,7 +628,7 @@ function renderLogin(msg,email){
 /* ====================== โครงหน้า ====================== */
 function renderTabs(){
   const n=allAlerts().length;
-  const t=[['stock','🚗','สต็อกรถ'],['alerts','🔔','แจ้งเตือน'],['inspect','📋','ตรวจสภาพ'],['handover','📄','ใบส่งมอบ'],['data','⚙️','ข้อมูล']];
+  const t=[['stock','🚗','สต็อกรถ'],['alerts','🔔','แจ้งเตือน'],['inspect','📋','ตรวจสภาพ'],['quote','💰','ใบเสนอราคา'],['handover','📄','ใบส่งมอบ'],['data','⚙️','ข้อมูล']];
   const el=$('#tabs');if(!el)return;
   el.innerHTML=t.map(([k,i,l])=>`<button class="tab" role="tab" aria-selected="${state.tab===k}" data-act="tab" data-v="${k}"><span class="ti" aria-hidden="true">${i}</span><span class="tl">${l}</span>${k==='alerts'&&n?`<span class="badge">${n}</span>`:''}</button>`).join('');
 }
@@ -641,7 +641,7 @@ function shell(){
 function render(){
   if(!$('#view'))shell();
   renderTabs();
-  ({stock:renderStock,alerts:renderAlerts,inspect:renderInspect,handover:renderHandover,data:renderData})[state.tab]();
+  ({stock:renderStock,alerts:renderAlerts,inspect:renderInspect,quote:renderQuote,handover:renderHandover,data:renderData})[state.tab]();
 }
 
 /* ====================== สต็อก ====================== */
@@ -811,6 +811,58 @@ function updateInspPaper(){
 }
 
 /* ====================== ใบส่งมอบ ====================== */
+
+/* ====================== ใบเสนอราคา (เก็บในข้อมูลใบส่งมอบ ช่อง q ไม่ต้องแก้ฐานข้อมูล) ====================== */
+const newQt=()=>({date:TODAY_ISO,days:'7',name:'',phone:'',price:'',discount:'',fee:'',gift:'',down:'',months:'',monthly:'',loan:'',note:''});
+const qt=id=>{const h=ho(id);return h.q||(h.q={...newQt()})};
+function qtTotal(c,Q){const p=String(Q.price).trim()!==''?num(Q.price):num(c.price);return {price:p,net:p-num(Q.discount)+num(Q.fee)}}
+function renderQuote(){
+  const c=cur();if(!c){$('#view').innerHTML=noCar();return}
+  const Q=qt(c.id),h=ho(c.id);
+  if(!Q.name&&h.name)Q.name=h.name;if(!Q.phone&&h.phone)Q.phone=h.phone;
+  const t=(k,l,x)=>`<label class="f">${l}<input type="text" data-in="qt:${k}" value="${esc(Q[k])}" ${x||''}></label>`;
+  const m=(k,l,ph)=>t(k,l+' (บาท)','inputmode="numeric"'+(ph?` placeholder="${ph}"`:''));
+  $('#view').innerHTML=`<section class="two">
+   <div class="card noprint"><h3>ใบเสนอราคา</h3>${carPicker('quote')}
+     <p class="hint">ข้อมูลรถและราคาขายดึงจากข้อมูลรถ ถ้าช่อง “ราคาเสนอ” ว่างจะใช้ราคาขายปัจจุบัน (${money(c.price)} บาท)</p>
+     <div class="sec0">ลูกค้า</div>
+     <div class="grid2">${t('name','ชื่อลูกค้า')}${t('phone','เบอร์ติดต่อ')}</div>
+     <div class="grid2"><label class="f">วันที่เสนอราคา<input type="date" data-in="qt:date" value="${esc(Q.date)}"></label>${t('days','ใช้ได้ภายใน (วัน)','inputmode="numeric"')}</div>
+     <div class="sec0">ราคา</div>
+     <div class="grid2">${m('price','ราคาเสนอ',money(c.price))}${m('discount','ส่วนลด')}${m('fee','ค่าโอน / ค่าดำเนินการ')}</div>
+     <label class="f">ของแถม / สิทธิพิเศษ<textarea data-in="qt:gift">${esc(Q.gift)}</textarea></label>
+     <div class="sec0">การชำระเงิน (ไม่บังคับ)</div>
+     <div class="grid2">${m('down','เงินดาวน์')}${m('loan','ยอดจัดไฟแนนซ์')}${t('months','จำนวนงวด','inputmode="numeric"')}${m('monthly','ค่างวดต่อเดือน')}</div>
+     <label class="f">หมายเหตุ / เงื่อนไข<textarea data-in="qt:note">${esc(Q.note)}</textarea></label>
+     <p class="hint" id="qthint"></p></div>
+   <div class="paper-wrap"><div class="paper-actions noprint"><button class="btn pri" data-act="print">พิมพ์ / บันทึกเป็น PDF</button></div><div class="paper ho" id="qpaper"></div></div></section>`;
+  updateQuote();
+}
+function updateQuote(){
+  const el=$('#qpaper');if(!el)return;
+  const c=cur(),Q=qt(c.id);
+  const T=qtTotal(c,Q);
+  const amt=v=>String(v==null?'':v).trim()===''?'':money(num(v));
+  const u=(v,w)=>`<span class="u" style="min-width:${w}px">${esc(v||'')}</span>`;
+  const big=(l,v)=>`<tr><td class="l">${l}</td><td>${esc(v)}</td></tr>`;
+  const mr=(l,v,cls)=>`<tr${cls?` class="${cls}"`:''}><td>${l}</td><td class="r">${v}</td><td class="b">บาท</td></tr>`;
+  let until='';if(Q.date&&num(Q.days)>0){const d=new Date(Q.date+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+num(Q.days));until=d.toISOString().slice(0,10)}
+  const hint=$('#qthint');if(hint)hint.textContent='ราคาสุทธิ = ราคาเสนอ − ส่วนลด + ค่าโอน/ค่าดำเนินการ = '+money(T.net)+' บาท';
+  const pay=['down','loan','months','monthly'].some(k=>String(Q[k]).trim()!=='');
+  el.innerHTML=`<div class="top2"><div class="logo">${logoHtml()}</div>
+     <div class="dtr">วันที่ ${u(Q.date?fmtBE(Q.date):'',120)}<br>เบอร์ติดต่อ ${esc(C.SHOP_PHONE||'')}</div></div>
+   <h2 style="text-align:center">ใบเสนอราคารถยนต์</h2>
+   <div class="cols"><div><h3>ข้อมูลลูกค้า</h3>
+       <table class="big">${big('ชื่อลูกค้า',Q.name)}${big('เบอร์ติดต่อ',Q.phone)}${big('ใช้ได้ถึงวันที่',until?fmtBE(until):'')}</table>
+       <h3>ราคา</h3>
+       <table class="sm" style="font-size:15px">${mr('ราคารถ',T.price?money(T.price):'')}${mr('ส่วนลด',amt(Q.discount))}${mr('ค่าโอน / ค่าดำเนินการ',amt(Q.fee))}${mr('ราคาสุทธิ',T.price?money(T.net):'','hl')}</table></div>
+     <div><h3>รายละเอียดรถ</h3>
+       <table class="big tall">${big('ยี่ห้อ',c.brand)}${big('รุ่น',[c.model,c.submodel].filter(Boolean).join(' '))}${big('หมายเลขทะเบียน',plateText(c))}${big('ปี',c.year||'')}${big('เกียร์',c.gear)}${big('สี',c.color)}${big('เลขไมล์',c.mileage!=null&&c.mileage!==''?money(c.mileage)+' กม.':'')}${big('เชื้อเพลิง',c.fuel)}</table></div></div>
+   ${pay?`<h3 style="text-align:center;margin:8px 0 4px">การชำระเงิน</h3><table class="sm" style="max-width:460px;margin:0 auto;font-size:15px">${mr('เงินดาวน์',amt(Q.down))}${mr('ยอดจัดไฟแนนซ์',amt(Q.loan))}${String(Q.months).trim()!==''?`<tr><td>จำนวนงวด</td><td class="r">${esc(Q.months)}</td><td class="b">งวด</td></tr>`:''}${mr('ค่างวดต่อเดือน',amt(Q.monthly))}</table>`:''}
+   <div class="rem">ของแถม / สิทธิพิเศษ<br><span>${esc(Q.gift)}</span></div>
+   <div class="rem" style="min-height:60px;margin-top:6px">หมายเหตุ / เงื่อนไข<br><span>${esc(Q.note||'ราคานี้ใช้ได้ตามวันที่ระบุ และอาจเปลี่ยนแปลงได้หากรถถูกจองหรือขายไปก่อน')}</span></div>
+   <div class="sg"><div>ผู้เสนอราคา ${u('',190)}</div><div>ลูกค้า ${u('',190)}</div></div>`;
+}
 function renderHandover(){
   const c=cur();if(!c){$('#view').innerHTML=noCar();return}
   const h=ho(c.id),I=INSPS[c.id];
@@ -1103,6 +1155,7 @@ document.addEventListener('input',e=>{
   if(ns==='q'){state.q=t.value;renderList()}
   else if(ns==='f'){state.f[k]=t.value;renderList()}
   else if(ns==='ho'){ho(state.sel)[k]=t.value;updatePaper();markDirty('ho',state.sel)}
+  else if(ns==='qt'){qt(state.sel)[k]=t.value;updateQuote();markDirty('ho',state.sel)}
   else if(ns==='i'){insp(state.sel)[k]=t.value;updateInspPaper();markDirty('insp',state.sel);renderTabs()}
   else if(ns==='it'){const [,key,fld]=t.dataset.in.split(':');itemOf(insp(state.sel),key)[fld]=t.value;updateInspPaper();markDirty('insp',state.sel)}
   else if(ns==='dc'){insp(state.sel).docs[k]=t.value;updateInspPaper();markDirty('insp',state.sel)}
