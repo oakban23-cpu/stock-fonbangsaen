@@ -271,9 +271,9 @@ details summary{cursor:pointer;font-weight:600}
 @media screen and (max-width:820px){
   html,body{overflow-x:hidden;max-width:100%}
   .three,.two{grid-template-columns:minmax(0,1fr)!important}
-  .tabs{display:grid;grid-template-columns:repeat(5,1fr);overflow:visible;gap:0}
+  .tabs{display:grid;grid-template-columns:repeat(6,1fr);overflow:visible;gap:0}
   .tab{padding:10px 2px;font-size:13px;white-space:normal;text-align:center;line-height:1.2}
-  .paper-wrap .paper{display:none}
+  .paper-wrap .paper,.paper-wrap .paper.qd{display:none}
   .paper-actions{max-width:none;justify-content:stretch}.paper-actions .btn{width:100%;min-height:46px}
   input,select,textarea{font-size:16px!important}
   .btn{min-height:40px}
@@ -285,6 +285,7 @@ details summary{cursor:pointer;font-weight:600}
   .row .r{grid-column:1/-1;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px}
 }
 #bookprint{display:none}
+body.measuring .paper-wrap .paper.qd{display:flex!important}
 body.measuring .paper-wrap .paper{display:block!important;position:absolute!important;left:-9999px!important;top:0!important;visibility:hidden!important;width:88vw!important;min-width:0!important;max-width:none!important;padding:0!important;zoom:1!important}
 @media print{
   body.printing-book>*:not(#bookprint){display:none!important}
@@ -305,6 +306,29 @@ body.measuring .paper-wrap .paper{display:block!important;position:absolute!impo
   body{padding:6vw!important}
   body.printing-book{padding:0!important}
 }
+
+
+/* ---- ใบเสนอราคา (ทางการ เต็ม A4) ---- */
+.paper.qd{padding:26px 30px;font-size:14px;color:#111;display:flex;flex-direction:column;gap:12px;aspect-ratio:1/1.40;min-width:720px;box-sizing:border-box}
+.qd .qh{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-bottom:3px solid #0f4c5c;padding-bottom:12px}
+.qd .qtitle{text-align:right}.qd .qtitle h2{margin:0;font-size:30px;letter-spacing:.02em;color:#0f4c5c}.qd .qtitle small{display:block;letter-spacing:.35em;color:#6b7a80;font-size:11px;margin-bottom:6px}
+.qd .qmeta{display:grid;grid-template-columns:auto auto;gap:2px 12px;text-align:left;font-size:13px;justify-content:end}.qd .qmeta span{color:#555}.qd .qmeta b{min-width:110px}
+.qd .qshop{margin-top:-6px;font-size:13px;color:#444}
+.qd .qgrid{display:grid;grid-template-columns:1fr 1.15fr;gap:12px}
+.qd .qbox{border:1.2px solid #9aa7ab;border-radius:6px;overflow:hidden}
+.qd .qbox h4{margin:0;padding:5px 12px;background:#eaf1f3;color:#0f4c5c;font-size:14px;border-bottom:1px solid #9aa7ab;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.qd .kv{display:flex;gap:8px;padding:6px 12px;border-bottom:1px dotted #bbb;min-height:30px;align-items:baseline}.qd .kv:last-child{border-bottom:0}
+.qd .kv span{color:#555;min-width:104px;flex:none;white-space:nowrap}.qd .kv b{font-weight:600;overflow-wrap:anywhere}.qd .kv.tall{min-height:58px}
+.qd .qtab{width:100%;border-collapse:collapse;border:1.2px solid #9aa7ab;table-layout:fixed}
+.qd .qtab th{background:#0f4c5c;color:#fff;padding:7px 12px;font-size:14px;text-align:left;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.qd .qtab td{padding:9px 12px;border-bottom:1px solid #d3dadc;vertical-align:top}
+.qd .qtab .n{width:34px;text-align:center}.qd .qtab .a{width:190px;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.qd .qtab .tot td{background:#ffe9a8;font-weight:700;font-size:17px;border-top:2px solid #0f4c5c;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.qd .qtab .tot small{font-weight:500;font-size:12px;color:#333}
+.qd .pg{display:grid;grid-template-columns:1fr 1fr}.qd .pg .kv{border-right:1px dotted #bbb}
+.qd .qgrow{flex:1 1 auto;min-height:70px;overflow:visible;display:flex;flex-direction:column}.qd .qtx{padding:8px 12px;white-space:pre-wrap;line-height:1.7;flex:1}
+.qd .qsig{display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:6px;padding-top:6px}
+.qd .qsig>div{text-align:center}.qd .qsig i{display:block;border-bottom:1.2px solid #111;height:46px}.qd .qsig span{display:block;margin-top:6px;font-weight:600}.qd .qsig small{color:#555}
 
 /* ---- UI รอบ 2: อ่านง่าย ใช้ง่าย ---- */
 body{font-size:15px}
@@ -813,7 +837,7 @@ function updateInspPaper(){
 /* ====================== ใบส่งมอบ ====================== */
 
 /* ====================== ใบเสนอราคา (เก็บในข้อมูลใบส่งมอบ ช่อง q ไม่ต้องแก้ฐานข้อมูล) ====================== */
-const newQt=()=>({date:TODAY_ISO,days:'7',name:'',phone:'',price:'',discount:'',fee:'',gift:'',down:'',months:'',monthly:'',loan:'',note:''});
+const newQt=()=>({no:'',sales:'',addr:'',date:TODAY_ISO,days:'7',name:'',phone:'',price:'',discount:'',fee:'',gift:'',down:'',months:'',monthly:'',loan:'',note:''});
 const qt=id=>{const h=ho(id);return h.q||(h.q={...newQt()})};
 function qtTotal(c,Q){const p=String(Q.price).trim()!==''?num(Q.price):num(c.price);return {price:p,net:p-num(Q.discount)+num(Q.fee)}}
 function renderQuote(){
@@ -827,6 +851,8 @@ function renderQuote(){
      <p class="hint">ข้อมูลรถและราคาขายดึงจากข้อมูลรถ ถ้าช่อง “ราคาเสนอ” ว่างจะใช้ราคาขายปัจจุบัน (${money(c.price)} บาท)</p>
      <div class="sec0">ลูกค้า</div>
      <div class="grid2">${t('name','ชื่อลูกค้า')}${t('phone','เบอร์ติดต่อ')}</div>
+     <label class="f">ที่อยู่ลูกค้า (ไม่บังคับ)<textarea data-in="qt:addr">${esc(Q.addr)}</textarea></label>
+     <div class="grid2">${t('no','เลขที่ใบเสนอราคา','placeholder="เว้นว่าง = ออกเลขให้อัตโนมัติ"')}${t('sales','พนักงานขาย')}</div>
      <div class="grid2"><label class="f">วันที่เสนอราคา<input type="date" data-in="qt:date" value="${esc(Q.date)}"></label>${t('days','ใช้ได้ภายใน (วัน)','inputmode="numeric"')}</div>
      <div class="sec0">ราคา</div>
      <div class="grid2">${m('price','ราคาเสนอ',money(c.price))}${m('discount','ส่วนลด')}${m('fee','ค่าโอน / ค่าดำเนินการ')}</div>
@@ -835,33 +861,50 @@ function renderQuote(){
      <div class="grid2">${m('down','เงินดาวน์')}${m('loan','ยอดจัดไฟแนนซ์')}${t('months','จำนวนงวด','inputmode="numeric"')}${m('monthly','ค่างวดต่อเดือน')}</div>
      <label class="f">หมายเหตุ / เงื่อนไข<textarea data-in="qt:note">${esc(Q.note)}</textarea></label>
      <p class="hint" id="qthint"></p></div>
-   <div class="paper-wrap"><div class="paper-actions noprint"><button class="btn pri" data-act="print">พิมพ์ / บันทึกเป็น PDF</button></div><div class="paper ho" id="qpaper"></div></div></section>`;
+   <div class="paper-wrap"><div class="paper-actions noprint"><button class="btn pri" data-act="print">พิมพ์ / บันทึกเป็น PDF</button></div><div class="paper qd" id="qpaper"></div></div></section>`;
   updateQuote();
+}
+function thaiBaht(n){
+  n=Math.round(Number(n)||0);if(n<=0)return '';
+  const D=['ศูนย์','หนึ่ง','สอง','สาม','สี่','ห้า','หก','เจ็ด','แปด','เก้า'],P=['','สิบ','ร้อย','พัน','หมื่น','แสน'];
+  const six=s=>{let r='';const L=s.length;for(let i=0;i<L;i++){const d=+s[i],p=L-i-1;if(!d)continue;
+    if(p===0&&d===1&&L>1)r+='เอ็ด';else if(p===1&&d===2)r+='ยี่';else if(p===1&&d===1)r+='';else r+=D[d];r+=P[p]}return r};
+  const rec=x=>{const s=String(x);if(s.length>6){const h=s.slice(0,-6),l=s.slice(-6);return rec(+h)+'ล้าน'+(+l?six(String(+l)):'')}return six(s)};
+  return rec(n)+'บาทถ้วน';
 }
 function updateQuote(){
   const el=$('#qpaper');if(!el)return;
-  const c=cur(),Q=qt(c.id);
+  const c=cur(),Q=qt(c.id),h=ho(c.id);
   const T=qtTotal(c,Q);
   const amt=v=>String(v==null?'':v).trim()===''?'':money(num(v));
-  const u=(v,w)=>`<span class="u" style="min-width:${w}px">${esc(v||'')}</span>`;
-  const big=(l,v)=>`<tr><td class="l">${l}</td><td>${esc(v)}</td></tr>`;
-  const mr=(l,v,cls)=>`<tr${cls?` class="${cls}"`:''}><td>${l}</td><td class="r">${v}</td><td class="b">บาท</td></tr>`;
+  const e=v=>esc(v==null?'':v);
   let until='';if(Q.date&&num(Q.days)>0){const d=new Date(Q.date+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+num(Q.days));until=d.toISOString().slice(0,10)}
+  const pdig=String(c.plate||'').replace(/\D/g,'');
+  const qno=String(Q.no||'').trim()||('QT'+String(Q.date||TODAY_ISO).replace(/-/g,'')+(pdig?'-'+pdig:''));
   const hint=$('#qthint');if(hint)hint.textContent='ราคาสุทธิ = ราคาเสนอ − ส่วนลด + ค่าโอน/ค่าดำเนินการ = '+money(T.net)+' บาท';
+  const kv=(l,v)=>`<div class="kv"><span>${l}</span><b>${e(v)}</b></div>`;
   const pay=['down','loan','months','monthly'].some(k=>String(Q[k]).trim()!=='');
-  el.innerHTML=`<div class="top2"><div class="logo">${logoHtml()}</div>
-     <div class="dtr">วันที่ ${u(Q.date?fmtBE(Q.date):'',120)}<br>เบอร์ติดต่อ ${esc(C.SHOP_PHONE||'')}</div></div>
-   <h2 style="text-align:center">ใบเสนอราคารถยนต์</h2>
-   <div class="cols"><div><h3>ข้อมูลลูกค้า</h3>
-       <table class="big">${big('ชื่อลูกค้า',Q.name)}${big('เบอร์ติดต่อ',Q.phone)}${big('ใช้ได้ถึงวันที่',until?fmtBE(until):'')}</table>
-       <h3>ราคา</h3>
-       <table class="sm" style="font-size:15px">${mr('ราคารถ',T.price?money(T.price):'')}${mr('ส่วนลด',amt(Q.discount))}${mr('ค่าโอน / ค่าดำเนินการ',amt(Q.fee))}${mr('ราคาสุทธิ',T.price?money(T.net):'','hl')}</table></div>
-     <div><h3>รายละเอียดรถ</h3>
-       <table class="big tall">${big('ยี่ห้อ',c.brand)}${big('รุ่น',[c.model,c.submodel].filter(Boolean).join(' '))}${big('หมายเลขทะเบียน',plateText(c))}${big('ปี',c.year||'')}${big('เกียร์',c.gear)}${big('สี',c.color)}${big('เลขไมล์',c.mileage!=null&&c.mileage!==''?money(c.mileage)+' กม.':'')}${big('เชื้อเพลิง',c.fuel)}</table></div></div>
-   ${pay?`<h3 style="text-align:center;margin:8px 0 4px">การชำระเงิน</h3><table class="sm" style="max-width:460px;margin:0 auto;font-size:15px">${mr('เงินดาวน์',amt(Q.down))}${mr('ยอดจัดไฟแนนซ์',amt(Q.loan))}${String(Q.months).trim()!==''?`<tr><td>จำนวนงวด</td><td class="r">${esc(Q.months)}</td><td class="b">งวด</td></tr>`:''}${mr('ค่างวดต่อเดือน',amt(Q.monthly))}</table>`:''}
-   <div class="rem">ของแถม / สิทธิพิเศษ<br><span>${esc(Q.gift)}</span></div>
-   <div class="rem" style="min-height:60px;margin-top:6px">หมายเหตุ / เงื่อนไข<br><span>${esc(Q.note||'ราคานี้ใช้ได้ตามวันที่ระบุ และอาจเปลี่ยนแปลงได้หากรถถูกจองหรือขายไปก่อน')}</span></div>
-   <div class="sg"><div>ผู้เสนอราคา ${u('',190)}</div><div>ลูกค้า ${u('',190)}</div></div>`;
+  const car=[c.brand,c.model,c.submodel].filter(Boolean).join(' ');
+  const rows=[[`${e(car)} ทะเบียน ${e(plateText(c))}${c.year?` ปี ${e(c.year)}`:''}`,T.price?money(T.price):'']];
+  if(num(Q.discount))rows.push(['ส่วนลด','-'+money(num(Q.discount))]);
+  if(num(Q.fee))rows.push(['ค่าโอน / ค่าดำเนินการ',money(num(Q.fee))]);
+  const txt=thaiBaht(T.net);
+  el.classList.add('qd');
+  el.innerHTML=`<div class="qh"><div class="qlogo">${logoHtml()}</div>
+     <div class="qtitle"><h2>ใบเสนอราคา</h2><small>QUOTATION</small>
+       <div class="qmeta"><span>เลขที่</span><b>${e(qno)}</b><span>วันที่</span><b>${Q.date?fmtBE(Q.date):''}</b><span>ใช้ได้ถึง</span><b>${until?fmtBE(until):''}</b></div></div></div>
+   <div class="qshop">${e(C.SHOP_NAME||'')}${C.SHOP_PHONE?` · โทร ${e(C.SHOP_PHONE)}`:''}</div>
+   <div class="qgrid">
+     <section class="qbox"><h4>ข้อมูลลูกค้า</h4>${kv('ชื่อลูกค้า',Q.name)}${kv('เบอร์ติดต่อ',Q.phone)}<div class="kv tall"><span>ที่อยู่</span><b>${e(Q.addr)}</b></div></section>
+     <section class="qbox"><h4>ข้อมูลรถยนต์</h4>${kv('ยี่ห้อ / รุ่น',car)}${kv('ทะเบียน',plateText(c))}${kv('ปี / สี',[c.year,c.color].filter(Boolean).join(' / '))}${kv('เกียร์ / เชื้อเพลิง',[c.gear,c.fuel].filter(Boolean).join(' / '))}${kv('เลขไมล์',c.mileage!=null&&c.mileage!==''?money(c.mileage)+' กม.':'')}${h.chassis?kv('เลขตัวถัง',h.chassis):''}${h.engine?kv('เลขเครื่องยนต์',h.engine):''}</section>
+   </div>
+   <table class="qtab"><thead><tr><th class="n">#</th><th>รายการ</th><th class="a">จำนวนเงิน (บาท)</th></tr></thead>
+     <tbody>${rows.map((r,i)=>`<tr><td class="n">${i+1}</td><td>${r[0]}</td><td class="a">${r[1]}</td></tr>`).join('')}</tbody>
+     <tfoot><tr class="tot"><td colspan="2">ราคาสุทธิ${txt?` <small>(${e(txt)})</small>`:''}</td><td class="a">${T.price?money(T.net):''}</td></tr></tfoot></table>
+   ${pay?`<section class="qbox qpay"><h4>เงื่อนไขการชำระเงิน</h4><div class="pg">${kv('เงินดาวน์',amt(Q.down)?amt(Q.down)+' บาท':'')}${kv('ยอดจัดไฟแนนซ์',amt(Q.loan)?amt(Q.loan)+' บาท':'')}${kv('จำนวนงวด',String(Q.months).trim()?Q.months+' งวด':'')}${kv('ค่างวดต่อเดือน',amt(Q.monthly)?amt(Q.monthly)+' บาท':'')}</div></section>`:''}
+   <section class="qbox qgrow"><h4>ของแถม / สิทธิพิเศษ</h4><div class="qtx">${e(Q.gift)}</div></section>
+   <section class="qbox qgrow"><h4>หมายเหตุ / เงื่อนไข</h4><div class="qtx">${e(Q.note||'ราคานี้ใช้ได้ตามวันที่ระบุ และอาจเปลี่ยนแปลงได้หากรถถูกจองหรือขายไปก่อน')}</div></section>
+   <div class="qsig"><div><i></i><span>ผู้เสนอราคา${Q.sales?` (${e(Q.sales)})`:''}</span><small>วันที่ ........ / ........ / ........</small></div><div><i></i><span>ลูกค้า${Q.name?` (${e(Q.name)})`:''}</span><small>วันที่ ........ / ........ / ........</small></div></div>`;
 }
 function renderHandover(){
   const c=cur();if(!c){$('#view').innerHTML=noCar();return}
