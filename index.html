@@ -451,7 +451,7 @@ const SLOTS=[['front','หน้ารถ'],['book','หน้าเล่ม'],
 const COLORS={'เทา':'#8d969b','ขาว':'#eef1f1','เงิน':'#b9c1c5','ดำ':'#25292c','แดง':'#a3262c','น้ำเงิน':'#2a4a86','ทอง':'#b79a62','เขียว':'#2f6b4f','น้ำตาล':'#6b4a36','เหลือง':'#d6b43c','ส้ม':'#d9762b'};
 
 let sb=null,me=null;
-let cars=[],INSPS={},HOS={},config=structuredClone(DEFAULT_CFG),lineSet={},stateSet={},usage=0,lastLoad=0;
+let cars=[],INSPS={},HOS={},config=structuredClone(DEFAULT_CFG),lineSet={},stateSet={},sellers=[],usage=0,lastLoad=0;
 const FDEF=()=>({brand:'',color:'',gear:'',fuel:'',feature:'',yFrom:'',yTo:'',pMin:'',pMax:'',sort:'new'});
 const state={tab:'stock',filter:'พร้อมขาย',q:'',sel:null,mobileDetail:false,busy:false,f:FDEF(),fopen:false};
 const PKEY='stock_presets_v1';
@@ -514,7 +514,7 @@ async function loadAll(){
   INSPS={};(i.data||[]).forEach(r=>{const cc=car(r.car_id);if(cc)INSPS[r.car_id]=mergeInsp(r.data,cc)});
   HOS={};(h.data||[]).forEach(r=>{HOS[r.car_id]={...newHo(),...r.data}});
   const S={};(s.data||[]).forEach(r=>S[r.key]=r.value);
-  config={...structuredClone(DEFAULT_CFG),...(S.config||{})};lineSet=S.line||{};stateSet=S.state||{};
+  config={...structuredClone(DEFAULT_CFG),...(S.config||{})};lineSet=S.line||{};stateSet=S.state||{};sellers=Array.isArray(S.sellers&&S.sellers.list)?S.sellers.list:[];
   usage=(u&&u.data&&u.data.messages)||0;lastLoad=Date.now();
   if(!car(state.sel))state.sel=(cars.find(x=>x.status===state.filter)||cars[0]||{}).id||null;
 }
@@ -840,6 +840,14 @@ function updateInspPaper(){
 const newQt=()=>({no:'',sales:'',addr:'',date:TODAY_ISO,days:'7',name:'',phone:'',price:'',discount:'',fee:'',gift:'',down:'',months:'',monthly:'',loan:'',note:''});
 const qt=id=>{const h=ho(id);return h.q||(h.q={...newQt()})};
 function qtTotal(c,Q){const p=String(Q.price).trim()!==''?num(Q.price):num(c.price);return {price:p,net:p-num(Q.discount)+num(Q.fee)}}
+
+/* ผู้ขาย: จำชื่อไว้ใช้ซ้ำ (เก็บในตารางตั้งค่า key=sellers ใช้ร่วมกันทุกเครื่อง) */
+async function saveSellers(){const {error}=await sb.from('settings').upsert({key:'sellers',value:{list:sellers}});if(error){toast('บันทึกรายชื่อผู้ขายไม่สำเร็จ: '+error.message,true);return false}return true}
+function sellerBar(ns,key,curName){
+  const nm=String(curName||'').trim();
+  return `<div class="presets" style="margin-top:2px"><div class="ptitle">ผู้ขายที่จำไว้ (แตะเพื่อเลือก)</div>${sellers.length?`<div class="chips">${sellers.map((s,i)=>`<span class="pchip"><button class="chip" data-act="pickSeller" data-ns="${ns}" data-k="${key}" data-v="${i}">${esc(s)}</button><button class="pdel" data-act="delSeller" data-v="${i}" aria-label="ลบ ${esc(s)}">✕</button></span>`).join('')}</div>`:'<div class="hint">ยังไม่มีชื่อที่จำไว้</div>'}
+   <button class="btn sm" data-act="addSeller" data-ns="${ns}" data-k="${key}">➕ จำชื่อผู้ขายนี้</button></div>`;
+}
 function renderQuote(){
   const c=cur();if(!c){$('#view').innerHTML=noCar();return}
   const Q=qt(c.id),h=ho(c.id);
@@ -852,7 +860,8 @@ function renderQuote(){
      <div class="sec0">ลูกค้า</div>
      <div class="grid2">${t('name','ชื่อลูกค้า')}${t('phone','เบอร์ติดต่อ')}</div>
      <label class="f">ที่อยู่ลูกค้า (ไม่บังคับ)<textarea data-in="qt:addr">${esc(Q.addr)}</textarea></label>
-     <div class="grid2">${t('no','เลขที่ใบเสนอราคา','placeholder="เว้นว่าง = ออกเลขให้อัตโนมัติ"')}${t('sales','พนักงานขาย')}</div>
+     <div class="grid2">${t('no','เลขที่ใบเสนอราคา','placeholder="เว้นว่าง = ออกเลขให้อัตโนมัติ"')}${t('sales','พนักงานขาย / ผู้ขาย')}</div>
+     ${sellerBar('qt','sales',Q.sales)}
      <div class="grid2"><label class="f">วันที่เสนอราคา<input type="date" data-in="qt:date" value="${esc(Q.date)}"></label>${t('days','ใช้ได้ภายใน (วัน)','inputmode="numeric"')}</div>
      <div class="sec0">ราคา</div>
      <div class="grid2">${m('price','ราคาเสนอ',money(c.price))}${m('discount','ส่วนลด')}${m('fee','ค่าโอน / ค่าดำเนินการ')}</div>
@@ -934,7 +943,8 @@ function renderHandover(){
      <div class="sec0">รายการของแถม</div>
      <div class="grid2">${m('fCost','ค่าจัด / โอน')}${m('fOil','เปลี่ยนถ่ายน้ำมันเครื่อง')}${m('fGear','เปลี่ยนถ่ายน้ำมันเกียร์')}${m('fDiff','เปลี่ยนน้ำมันเฟืองท้าย')}${m('fBatt','เปลี่ยนแบตเตอรี่')}${t('fOtherLabel','อื่นๆ (ระบุ)')}${m('fOther','อื่นๆ')}</div>
      <div class="sec0">การส่งมอบ</div>
-     <div class="grid2">${d('date','วันที่ในเอกสาร')}${d('deliver','วันที่ได้รับรถ')}${t('time','เวลา','placeholder="เช่น 10:00"')}${t('sellerPhone','เบอร์ติดต่อผู้ขาย')}</div>
+     <div class="grid2">${d('date','วันที่ในเอกสาร')}${d('deliver','วันที่ได้รับรถ')}${t('time','เวลา','placeholder="เช่น 10:00"')}${t('seller','ชื่อผู้ขาย')}${t('sellerPhone','เบอร์ติดต่อผู้ขาย')}</div>
+     ${sellerBar('ho','seller',h.seller)}
      <label class="f">หมายเหตุ<textarea data-in="ho:note">${esc(h.note)}</textarea></label></div>
    <div class="paper-wrap"><div class="paper-actions noprint"><button class="btn pri" data-act="print">พิมพ์ / บันทึกเป็น PDF</button></div><div class="paper ho" id="paper"></div></div></section>`;
   updatePaper();
@@ -965,7 +975,7 @@ function updatePaper(){
      <div><h4>รายการของแถม</h4><table class="sm">${mr('ค่าจัด / โอน',amt(h.fCost))}${mr('เปลี่ยนถ่ายน้ำมันเครื่อง',amt(h.fOil))}${mr('เปลี่ยนถ่ายน้ำมันเกียร์',amt(h.fGear))}${mr('เปลี่ยนน้ำมันเฟืองท้าย',amt(h.fDiff))}${mr('เปลี่ยนแบตเตอรี่',amt(h.fBatt))}${mr('อื่นๆ '+esc(h.fOtherLabel),amt(h.fOther))}</table></div></div>
    <div class="stmt">ผู้ซื้อ${u(h.name,170)}ได้รับรถยนต์${u(c.brand+' '+c.model,130)}ทะเบียน${u(plateText(c),110)}ไว้ในครอบครองวันที่${u(h.deliver?fmtBE(h.deliver):'',120)}เวลา${u(h.time,80)} <span class="ul">รถยนต์อยู่ในสภาพเรียบร้อยทุกประการ ณ วันที่ส่งมอบ หากเกิดความเสียหายใด ๆ หรือมีการดัดแปลงสภาพรถยนต์ที่อยู่นอกเหนือจากเงื่อนไขการรับประกันของเต็นท์ หลังจากวันที่ได้รับรถ ผู้ซื้อตกลงรับผิดชอบค่าเสียหายทุกกรณี</span></div>
    <div class="rem">หมายเหตุ<br><span>${esc(h.note)}</span></div>
-   <div class="sg"><div>ผู้ซื้อ ${u('',190)}</div><div>ผู้ขาย ${u('',190)}</div><div>เบอร์ติดต่อ ${u(h.phone,150)}</div><div>เบอร์ติดต่อ ${u(h.sellerPhone,150)}</div></div>`;
+   <div class="sg"><div>ผู้ซื้อ ${u('',190)}</div><div>ผู้ขาย ${u(h.seller,190)}</div><div>เบอร์ติดต่อ ${u(h.phone,150)}</div><div>เบอร์ติดต่อ ${u(h.sellerPhone,150)}</div></div>`;
 }
 
 /* ====================== ข้อมูล: นำเข้า / รูป / สำรอง ====================== */
@@ -1156,6 +1166,22 @@ document.addEventListener('click',async e=>{
   else if(a==='reload'){try{await loadAll();render();toast('โหลดข้อมูลล่าสุดแล้ว')}catch(err){toast('โหลดไม่สำเร็จ: '+err.message,true)}}
   else if(a==='logout'){await flush();await sb.auth.signOut();me=null;renderLogin()}
   else if(a==='print'){printNow('paper')}
+  else if(a==='pickSeller'){
+    const name=sellers[+v];if(name==null)return;const ns=t.dataset.ns,k=t.dataset.k;
+    if(ns==='ho'){ho(state.sel)[k]=name;markDirty('ho',state.sel);renderHandover()}else{qt(state.sel)[k]=name;markDirty('ho',state.sel);renderQuote()}
+  }
+  else if(a==='addSeller'){
+    const ns=t.dataset.ns,k=t.dataset.k;const nm=String((ns==='ho'?ho(state.sel):qt(state.sel))[k]||'').trim();
+    if(!nm){toast('พิมพ์ชื่อผู้ขายก่อน แล้วกดจำชื่อ',true);return}
+    if(sellers.includes(nm)){toast('มีชื่อนี้อยู่แล้ว');return}
+    sellers=[...sellers,nm];
+    if(await saveSellers()){toast('จำชื่อ “'+nm+'” แล้ว');ns==='ho'?renderHandover():renderQuote()}else sellers=sellers.filter(x=>x!==nm);
+  }
+  else if(a==='delSeller'){
+    const nm=sellers[+v];if(nm==null||!confirm('ลบชื่อ “'+nm+'” ออกจากรายชื่อที่จำไว้?'))return;
+    const old=sellers;sellers=sellers.filter((_,i)=>i!==+v);
+    if(await saveSellers()){state.tab==='quote'?renderQuote():renderHandover()}else sellers=old;
+  }
   else if(a==='printBook')printBook();
   else if(a==='export')exportCSV();
   else if(a==='doImport')doImport();
