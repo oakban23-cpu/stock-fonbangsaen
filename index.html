@@ -500,12 +500,16 @@ const newHo=()=>({name:'',addr:'',idcard:'',phone:'',bank:'',loan:'',chassis:'',
 const ho=id=>HOS[id]||(HOS[id]=newHo());
 const calcBalance=h=>(num(h.down)+num(h.transfer)+num(h.premium)+num(h.other))-(num(h.deposit)+num(h.tradein));
 
+async function pageAll(mk){ // Supabase จำกัด 1000 แถว/คำขอ → ดึงทีละหน้า
+  let out=[];for(let f=0;;f+=1000){const r=await mk().range(f,f+999);if(r.error)return {data:null,error:r.error};out=out.concat(r.data||[]);if((r.data||[]).length<1000)break}
+  return {data:out,error:null};
+}
 async function loadAll(){
   const m=TODAY_ISO.slice(0,7);
   const [c,i,h,s,u]=await Promise.all([
-    sb.from('cars').select('*').order('intake',{ascending:false,nullsFirst:false}).range(0,4999),
-    sb.from('inspections').select('*').range(0,4999),
-    sb.from('handovers').select('*').range(0,4999),
+    pageAll(()=>sb.from('cars').select('*').order('intake',{ascending:false,nullsFirst:false}).order('id')),
+    pageAll(()=>sb.from('inspections').select('*').order('car_id')),
+    pageAll(()=>sb.from('handovers').select('*').order('car_id')),
     sb.from('settings').select('*'),
     sb.from('line_usage').select('messages').eq('month',m).maybeSingle()]);
   const err=c.error||i.error||h.error||s.error;
