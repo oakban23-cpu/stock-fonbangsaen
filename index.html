@@ -491,7 +491,7 @@ const car=id=>cars.find(c=>c.id===id);
 const cur=()=>car(state.sel);
 const STATUSES=()=>{const s=[...(config.statuses||DEFAULT_CFG.statuses)];cars.forEach(c=>{if(c.status&&!s.includes(c.status))s.push(c.status)});return s};
 
-const newInsp=c=>({appt:'',time:'',buyer:'',phone:'',items:{},fuelAmt:'',custom:'',note:'',docs:{book:false,keys:false,keyN:'',remoteN:'',manual:false,copy:false,service:false,tax:false,taxExp:(c&&c.tax_date)||'',pra:false,praExp:'',ins:false,insType:'',insExp:''}});
+const newInsp=c=>({appt:'',time:'',buyer:'',phone:'',items:{},fuelAmt:'',custom:'',note:'',docs:{book:false,keys:false,keyN:'',remoteN:'',manual:false,copy:false,service:false,tax:false,taxExp:(c&&c.tax_date)||'',pra:false,praExp:(c&&c.act_date)||'',ins:false,insType:'',insExp:''}});
 const mergeInsp=(data,c)=>{const b=newInsp(c);return {...b,...data,items:(data&&data.items)||{},docs:{...b.docs,...((data&&data.docs)||{})}}};
 const insp=id=>INSPS[id]||(INSPS[id]=newInsp(car(id)));
 const itemOf=(I,k)=>I.items[k]||(I.items[k]={done:false,date:'',by:''});
@@ -546,6 +546,12 @@ function alertsFor(c){
     if(d<0)out.push({k:'tax',lv:'crit',n:d,text:'ภาษีขาดแล้ว '+(-d)+' วัน'});
     else if(d===0)out.push({k:'tax',lv:'warn',n:0,text:'ภาษีหมดวันนี้'});
     else if(d<=config.tax.days)out.push({k:'tax',lv:'warn',n:d,text:'ภาษีหมดอีก '+d+' วัน'});
+  }
+  if(config.tax.on&&c.act_date){
+    const d=diffDays(c.act_date,TODAY_ISO);
+    if(d<0)out.push({k:'act',lv:'crit',n:d,text:'พ.ร.บ.ขาดแล้ว '+(-d)+' วัน'});
+    else if(d===0)out.push({k:'act',lv:'warn',n:0,text:'พ.ร.บ.หมดวันนี้'});
+    else if(d<=config.tax.days)out.push({k:'act',lv:'warn',n:d,text:'พ.ร.บ.หมดอีก '+d+' วัน'});
   }
   if(config.stale.on&&c.status==='พร้อมขาย'&&c.intake){
     const a=diffDays(TODAY_ISO,c.intake);
@@ -713,7 +719,7 @@ function renderDetail(){
   if(!c){el.innerHTML='<div class="empty">เลือกรถจากรายการ</div>';return}
   const al=alertsFor(c),age=c.intake?diffDays(TODAY_ISO,c.intake):null;
   const specs=[['ปี',c.year||'-'],['เลขไมล์',c.mileage!=null?money(c.mileage):'-'],['เกียร์',c.gear||'-'],['เชื้อเพลิง',c.fuel||'-'],['สี',c.color||'-'],['เครื่องยนต์',c.cc!=null?Number(c.cc).toFixed(1):'-']];
-  const rows=[['รับเข้าสต็อก',fmtBE(c.intake)+(age!=null?` <span class="mut">· ${age} วัน</span>`:'')],['ภาษีขาด',fmtBE(c.tax_date)],['ลักษณะ',esc(c.feature)||'-'],['เพิ่มเติม',esc(c.extra)||'-'],['หมายเหตุ',esc(c.note)||'-']];
+  const rows=[['รับเข้าสต็อก',fmtBE(c.intake)+(age!=null?` <span class="mut">· ${age} วัน</span>`:'')],['ภาษีขาด',fmtBE(c.tax_date)],['พ.ร.บ.ขาด',fmtBE(c.act_date)],['ลักษณะ',esc(c.feature)||'-'],['เพิ่มเติม',esc(c.extra)||'-'],['หมายเหตุ',esc(c.note)||'-']];
   const sold=(c.sold_date||c.buyer||c.sold_price||c.buyer_phone||c.status==='ขายแล้ว'||c.status==='จอง'||c.status==='ติดจอง');
   const srows=sold?[['วันขาย',fmtBE(c.sold_date)],['ราคาที่ขายได้',c.sold_price?money(c.sold_price):'-'],['ผู้ซื้อ',esc(c.buyer)||'-'],['เบอร์ผู้ซื้อ',c.buyer_phone?`<a href="tel:${esc(c.buyer_phone)}">${esc(c.buyer_phone)}</a>`:'-'],['สถานะเอกสาร',esc(c.doc_status)||'-']]:[];
   const col=r=>r.map(([k,v])=>`<div class="kv"><span>${k}</span><span class="num">${v}</span></div>`).join('');
@@ -1018,7 +1024,7 @@ function parseCSV(text){
   if(f!==''||row.length){row.push(f);rows.push(row)}
   return rows.filter(r=>r.some(x=>String(x).trim()!==''));
 }
-const HDR={'วัน/เดือน/ปี':'intake','สถานะ':'status','เพิ่มเติม':'extra','ทะเบียน':'plate','ภาษีขาด':'tax_date','ยี่ห้อ':'brand','รุ่น':'model','รุ่นย่อย':'submodel','ปีค.ศ.':'year','สี':'color','เลขไมล์':'mileage','ลักษณะ':'feature','เชื้อเพลิง':'fuel','ขนาดเครื่องยนต์':'cc','เกียร์':'gear','วันขาย':'sold_date','ราคาขาย':'price','ผ่อนเริ่มต้น':'installment_start','เบอร์โทรคนซื้อ':'buyer_phone','ผู้ซื้อ':'buyer','สถานะเอกสาร':'doc_status','หมายเหตุ':'note'};
+const HDR={'วัน/เดือน/ปี':'intake','สถานะ':'status','เพิ่มเติม':'extra','ทะเบียน':'plate','ภาษีขาด':'tax_date','พ.ร.บ.ขาด':'act_date','พรบ.ขาด':'act_date','ยี่ห้อ':'brand','รุ่น':'model','รุ่นย่อย':'submodel','ปีค.ศ.':'year','สี':'color','เลขไมล์':'mileage','ลักษณะ':'feature','เชื้อเพลิง':'fuel','ขนาดเครื่องยนต์':'cc','เกียร์':'gear','วันขาย':'sold_date','ราคาขาย':'price','ผ่อนเริ่มต้น':'installment_start','เบอร์โทรคนซื้อ':'buyer_phone','ผู้ซื้อ':'buyer','สถานะเอกสาร':'doc_status','หมายเหตุ':'note'};
 function splitPlate(raw){
   let s=String(raw||'').replace(/\s+/g,' ').trim();if(!s)return null;
   const t=s.split(' ');let prov='';
@@ -1042,7 +1048,7 @@ function readTable(text){
   const all=parseCSV(text);if(!all.length)return null;
   const head=all[0].map(h=>String(h).replace(/\s+/g,'').trim());
   const map={};head.forEach((h,i)=>{if(HDR[h]&&!(HDR[h] in map))map[HDR[h]]=i});
-  const dates=['intake','tax_date','sold_date'].filter(k=>k in map).map(k=>map[k]);
+  const dates=['intake','tax_date','act_date','sold_date'].filter(k=>k in map).map(k=>map[k]);
   return {rows:all.slice(1),map,idx:{dates}};
 }
 function buildCars(tbl,order,isSold){
@@ -1052,7 +1058,7 @@ function buildCars(tbl,order,isSold){
     const p=splitPlate(g(r,'plate'));if(!p){bad.noPlate++;return}
     const dt=k=>{const v=g(r,k);if(!v)return null;const d=parseDate(v,order);if(!d)bad.dates++;return d};
     const price=toNum(g(r,'price'));
-    out.push({plate:p.plate,province:p.province,intake:dt('intake'),tax_date:dt('tax_date'),brand:g(r,'brand'),model:g(r,'model'),submodel:g(r,'submodel'),
+    out.push({plate:p.plate,province:p.province,intake:dt('intake'),tax_date:dt('tax_date'),act_date:dt('act_date'),brand:g(r,'brand'),model:g(r,'model'),submodel:g(r,'submodel'),
       year:toNum(g(r,'year')),color:g(r,'color'),mileage:toNum(g(r,'mileage')),feature:g(r,'feature'),fuel:g(r,'fuel'),cc:toNum(g(r,'cc')),gear:g(r,'gear'),
       status:g(r,'status')||(isSold?'ขายแล้ว':'พร้อมขาย'),extra:g(r,'extra'),note:g(r,'note'),price,
       sold_date:dt('sold_date'),sold_price:isSold?price:null,installment_start:g(r,'installment_start'),buyer:g(r,'buyer'),buyer_phone:g(r,'buyer_phone'),doc_status:g(r,'doc_status')});
@@ -1124,7 +1130,7 @@ async function doPhotos(){
   state.busy=false;await loadAll();render();
 }
 function exportCSV(){
-  const cols=[['plate','ทะเบียน'],['province','จังหวัด'],['intake','วันรับเข้า'],['status','สถานะ'],['tax_date','ภาษีขาด'],['brand','ยี่ห้อ'],['model','รุ่น'],['submodel','รุ่นย่อย'],['year','ปี ค.ศ.'],['color','สี'],['mileage','เลขไมล์'],['feature','ลักษณะ'],['fuel','เชื้อเพลิง'],['cc','ขนาดเครื่องยนต์'],['gear','เกียร์'],['price','ราคาขาย'],['extra','เพิ่มเติม'],['note','หมายเหตุ'],['sold_date','วันขาย'],['sold_price','ราคาที่ขายได้'],['buyer','ผู้ซื้อ'],['buyer_phone','เบอร์โทรคนซื้อ'],['installment_start','ผ่อนเริ่มต้น'],['doc_status','สถานะเอกสาร']];
+  const cols=[['plate','ทะเบียน'],['province','จังหวัด'],['intake','วันรับเข้า'],['status','สถานะ'],['tax_date','ภาษีขาด'],['act_date','พ.ร.บ.ขาด'],['brand','ยี่ห้อ'],['model','รุ่น'],['submodel','รุ่นย่อย'],['year','ปี ค.ศ.'],['color','สี'],['mileage','เลขไมล์'],['feature','ลักษณะ'],['fuel','เชื้อเพลิง'],['cc','ขนาดเครื่องยนต์'],['gear','เกียร์'],['price','ราคาขาย'],['extra','เพิ่มเติม'],['note','หมายเหตุ'],['sold_date','วันขาย'],['sold_price','ราคาที่ขายได้'],['buyer','ผู้ซื้อ'],['buyer_phone','เบอร์โทรคนซื้อ'],['installment_start','ผ่อนเริ่มต้น'],['doc_status','สถานะเอกสาร']];
   const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
   const csv='﻿'+[cols.map(c=>q(c[1])).join(',')].concat(cars.map(c=>cols.map(([k])=>q(c[k])).join(','))).join('\r\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='stock-'+TODAY_ISO+'.csv';document.body.appendChild(a);a.click();a.remove();
@@ -1142,7 +1148,7 @@ function openCarForm(c){
    <label class="f">สี<input type="text" name="color" list="colors" value="${esc(v.color||'')}"></label><datalist id="colors">${Object.keys(COLORS).map(k=>`<option value="${k}">`).join('')}</datalist>
    ${inp('mileage','เลขไมล์','number')}${inp('price','ราคาขาย','number')}${inp('installment_start','ผ่อนเริ่มต้น (เช่น 5800/7ปี)')}${inp('cc','ขนาดเครื่องยนต์','number','step="0.1"')}
    ${sel('gear','เกียร์',['ออโต้','ธรรมดา'])}${sel('fuel','เชื้อเพลิง',['เบนซิน','ดีเซล','LPG','CNG','ไฮบริด','ไฟฟ้า'])}${sel('feature','ลักษณะ',['เก๋ง','กระบะ','SUV','แฮทช์แบ็ก','ตู้','อื่นๆ'])}
-   ${sel('status','สถานะ',STATUSES())}${inp('intake','วันที่รับเข้า','date')}${inp('tax_date','ภาษีขาด','date')}</div>
+   ${sel('status','สถานะ',STATUSES())}${inp('intake','วันที่รับเข้า','date')}${inp('tax_date','ภาษีขาด','date')}${inp('act_date','พ.ร.บ.ขาด','date')}</div>
    ${inp('extra','เพิ่มเติม (เช่น เล่มพร้อม)')}${inp('note','หมายเหตุ')}
    <details ${v.sold_date||v.buyer||v.sold_price||v.buyer_phone||v.doc_status||v.status==='ขายแล้ว'?'open':''}><summary>ข้อมูลการขาย</summary><div class="grid2" style="margin-top:10px">${inp('sold_date','วันขาย','date')}${inp('sold_price','ราคาที่ขายได้','number')}${inp('buyer','ผู้ซื้อ')}${inp('buyer_phone','เบอร์โทรคนซื้อ')}${inp('doc_status','สถานะเอกสาร')}</div></details>
    <div class="acts">${c?'<button type="button" class="btn danger" data-act="delCar" style="margin-right:auto">ลบรถคันนี้</button>':''}<button type="button" class="btn" data-act="closeModal">ยกเลิก</button><button class="btn pri" type="submit">บันทึก</button></div></form></div>`;
@@ -1270,7 +1276,7 @@ document.addEventListener('submit',async e=>{
   const f=e.target.closest('[data-form=car]');if(!f)return;e.preventDefault();
   const d=Object.fromEntries(new FormData(f));
   const n=k=>d[k]===''||d[k]==null?null:Number(d[k]);
-  const row={plate:d.plate.trim().replace(/\s+/g,' '),province:(d.province||'').trim().replace(/\.+$/,''),brand:d.brand.trim(),model:d.model.trim(),submodel:(d.submodel||'').trim(),year:n('year'),color:d.color||'',mileage:n('mileage'),price:n('price'),cc:n('cc'),gear:d.gear,fuel:d.fuel,feature:d.feature,status:d.status,intake:d.intake||null,tax_date:d.tax_date||null,extra:d.extra||'',note:d.note||'',sold_date:d.sold_date||null,sold_price:n('sold_price'),buyer:d.buyer||'',buyer_phone:d.buyer_phone||'',installment_start:d.installment_start||'',doc_status:d.doc_status||''};
+  const row={plate:d.plate.trim().replace(/\s+/g,' '),province:(d.province||'').trim().replace(/\.+$/,''),brand:d.brand.trim(),model:d.model.trim(),submodel:(d.submodel||'').trim(),year:n('year'),color:d.color||'',mileage:n('mileage'),price:n('price'),cc:n('cc'),gear:d.gear,fuel:d.fuel,feature:d.feature,status:d.status,intake:d.intake||null,tax_date:d.tax_date||null,act_date:d.act_date||null,extra:d.extra||'',note:d.note||'',sold_date:d.sold_date||null,sold_price:n('sold_price'),buyer:d.buyer||'',buyer_phone:d.buyer_phone||'',installment_start:d.installment_start||'',doc_status:d.doc_status||''};
   const btn=f.querySelector('[type=submit]');btn.disabled=true;
   const id=f.dataset.id;
   const r=id?await sb.from('cars').update(row).eq('id',id).select().single():await sb.from('cars').insert(row).select().single();
