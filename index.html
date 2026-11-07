@@ -445,7 +445,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function toast(msg,bad){const t=$('#toast');t.textContent=msg;t.className='show'+(bad?' bad':'');clearTimeout(toast.t);toast.t=setTimeout(()=>t.className='',bad?6000:2600)}
 
 /* ====================== ข้อมูล ====================== */
-const DEFAULT_CFG={tax:{on:true,days:30},stale:{on:true,days:90},prep:{on:true,days:1},status:{on:true},newcar:{on:true},daily:{on:true,time:'08:00'},statuses:['พร้อมขาย','จอง','กำลังเตรียม','ขายแล้ว']};
+const DEFAULT_CFG={tax:{on:true,days:30},stale:{on:true,days:90},hold:{on:true,days:7},prep:{on:true,days:1},status:{on:true},newcar:{on:true},daily:{on:true,time:'08:00'},statuses:['พร้อมขาย','จอง','กำลังเตรียม','ขายแล้ว']};
 const CHECKS=[['oil','เปลี่ยนถ่ายน้ำมันเครื่อง กรอง'],['gear','เปลี่ยนถ่ายน้ำมันเกียร์'],['diff','เปลี่ยนน้ำมันเฟืองท้าย'],['batt','เปลี่ยนแบตเตอรี่'],['elec','เช็คระบบไฟ'],['ac','เช็คระบบแอร์'],['polish','ขัดไฟ'],['fuel','เติมน้ำมัน'],['film','ติดฟิล์ม'],['wash','ล้างทำความสะอาด'],['dlt','ตรวจสภาพรถ ขนส่ง'],['pra','ตรวจสภาพรถ ตรอ พรบ'],['plug','หัวเทียน'],['paint','เก็บสี']];
 const SLOTS=[['front','หน้ารถ'],['book','หน้าเล่ม'],['p16','หน้า 16'],['p18','หน้า 18'],['p20','หน้า 20'],['table','ตารางผ่อน']];
 const COLORS={'เทา':'#8d969b','ขาว':'#eef1f1','เงิน':'#b9c1c5','ดำ':'#25292c','แดง':'#a3262c','น้ำเงิน':'#2a4a86','ทอง':'#b79a62','เขียว':'#2f6b4f','น้ำตาล':'#6b4a36','เหลือง':'#d6b43c','ส้ม':'#d9762b'};
@@ -552,6 +552,10 @@ function alertsFor(c){
     if(d<0)out.push({k:'act',lv:'crit',n:d,text:'พ.ร.บ.ขาดแล้ว '+(-d)+' วัน'});
     else if(d===0)out.push({k:'act',lv:'warn',n:0,text:'พ.ร.บ.หมดวันนี้'});
     else if(d<=config.tax.days)out.push({k:'act',lv:'warn',n:d,text:'พ.ร.บ.หมดอีก '+d+' วัน'});
+  }
+  if(config.hold&&config.hold.on&&(c.status==='จอง'||c.status==='ติดจอง')&&c.status_since){
+    const h=diffDays(TODAY_ISO,String(c.status_since).slice(0,10));
+    if(h>config.hold.days)out.push({k:'hold',lv:'warn',n:h,text:c.status+'ค้าง '+h+' วัน ยังไม่ปิดการขาย — ตามลูกค้า'});
   }
   if(config.stale.on&&c.status==='พร้อมขาย'&&c.intake){
     const a=diffDays(TODAY_ISO,c.intake);
@@ -750,6 +754,7 @@ function renderAlerts(){
    <div class="card"><h3>เงื่อนไขแจ้งเตือน</h3>
      ${rule('tax','ภาษีใกล้ขาด / ขาดแล้ว',`<div class="p">แจ้งก่อนหมด <input type="number" min="1" max="365" value="${k.tax.days}" data-ch="cfg:tax:days" aria-label="จำนวนวัน"> วัน</div>`)}
      ${rule('stale','รถค้างสต็อก (ส่งทุกวันจันทร์)',`<div class="p">เกิน <input type="number" min="1" max="999" value="${k.stale.days}" data-ch="cfg:stale:days" aria-label="จำนวนวัน"> วัน (เฉพาะ “พร้อมขาย”)</div>`)}
+     ${rule('hold','รถจอง/ติดจองค้างนาน (ตามลูกค้า)',`<div class="p">เกิน <input type="number" min="1" max="365" value="${(k.hold||{days:7}).days}" data-ch="cfg:hold:days" aria-label="จำนวนวัน"> วัน (สถานะ “จอง” / “ติดจอง”)</div>`)}
      ${rule('prep','เตรียมรถไม่ครบใกล้วันนัดส่งมอบ',`<div class="p">แจ้งก่อนวันนัด <input type="number" min="1" max="30" value="${k.prep.days}" data-ch="cfg:prep:days" aria-label="จำนวนวัน"> วัน</div>`)}
      ${rule('status','สถานะเปลี่ยน (ส่งทันที)')}
      ${rule('newcar','มีรถใหม่เข้าสต็อก (ส่งทันที)')}
